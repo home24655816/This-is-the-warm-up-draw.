@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>燈號抽獎程式</title>
+  <style>
+    body { text-align: center; font-family: sans-serif; }
+    .lights-container {
+      position: relative;
+      width: 400px;
+      height: 400px;
+      margin: 40px auto;
+    }
+    .light {
+      width: 100px;
+      height: 120px;
+      border-radius: 12px;
+      background-color: lightgray;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 10px;
+      box-shadow: 0 0 5px #ccc;
+      position: absolute;
+      transform: translate(-50%, -50%);
+      transition: 0.3s;
+    }
+    .light img {
+      max-width: 80px;
+      height: 60px;
+      object-fit: contain;
+      margin-bottom: 5px;
+    }
+    .light span {
+      font-size: 12px;
+    }
+    .active {
+      background-color: gold;
+      box-shadow: 0 0 20px gold;
+      transform: translate(-50%, -50%) scale(1.1);
+    }
+    #center-flash {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 80px;
+      height: 80px;
+      margin-left: -40px;
+      margin-top: -40px;
+      border-radius: 50%;
+      background: radial-gradient(circle, gold, orange);
+      box-shadow: 0 0 30px gold;
+      animation: pulse 1s infinite alternate;
+    }
+    @keyframes pulse {
+      from { transform: scale(1); opacity: 1; }
+      to { transform: scale(1.2); opacity: 0.6; }
+    }
+    #spinBtn { padding: 10px 20px; font-size: 20px; margin-top: 20px; }
+    #prizeImg { margin-top: 20px; max-width: 200px; display: none; }
+  </style>
+</head>
+<body>
+  <h1>歡迎來到燈號抽獎</h1>
+  <div class="lights-container" id="lights">
+    <div id="center-flash"></div>
+  </div>
+  <button id="spinBtn">抽獎！</button>
+  <p id="result"></p>
+  <img id="prizeImg" src="" alt="中獎獎品圖片">
+  <audio id="spinSound" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"></audio>
+  <audio id="winSound" src="https://cdn.pixabay.com/download/audio/2021/08/04/audio_706f1c50e8.mp3?filename=success-fanfare-trumpets-6185.mp3"></audio>
+  <audio id="cheerSound" src="https://cdn.pixabay.com/download/audio/2022/03/01/audio_9be62c9d55.mp3?filename=audience-light-cheer-6730.mp3"></audio>
+
+  <script>
+    const prizes = [
+      { name: '夜光幸運龜', probability: 0.35, img: './夜光幸運龜.jpg' },
+      { name: '迷你扭蛋', probability: 0.35, img: './扭蛋.jpg' },
+      { name: '舒壓按摩鍵盤', probability: 0.30, img: './電腦發光按鍵.jpg' },
+    ];
+
+    const lightsContainer = document.getElementById("lights");
+    const spinBtn = document.getElementById("spinBtn");
+    const result = document.getElementById("result");
+    const prizeImg = document.getElementById("prizeImg");
+    const spinSound = document.getElementById("spinSound");
+    const winSound = document.getElementById("winSound");
+    const cheerSound = document.getElementById("cheerSound");
+
+    const radius = 160;
+    const centerX = 200;
+    const centerY = 200;
+
+    prizes.forEach((prize, index) => {
+      const angle = (index / prizes.length) * 2 * Math.PI;
+      const x = centerX + radius * Math.cos(angle);
+      const y = centerY + radius * Math.sin(angle);
+
+      const div = document.createElement("div");
+      div.className = "light";
+      div.setAttribute("data-index", index);
+      div.style.left = `${x}px`;
+      div.style.top = `${y}px`;
+
+      const img = document.createElement("img");
+      img.src = prize.img;
+      img.alt = prize.name;
+
+      const label = document.createElement("span");
+      label.textContent = prize.name;
+
+      div.appendChild(img);
+      div.appendChild(label);
+      lightsContainer.appendChild(div);
+    });
+
+    spinBtn.addEventListener("click", () => {
+      spinSound.play();
+      result.textContent = '';
+      prizeImg.style.display = 'none';
+      const lights = document.querySelectorAll(".light");
+      lights.forEach(l => l.classList.remove("active"));
+
+      let r = Math.random();
+      let acc = 0;
+      let selectedIndex = -1;
+      for (let i = 0; i < prizes.length; i++) {
+        acc += prizes[i].probability;
+        if (r < acc) {
+          selectedIndex = i;
+          break;
+        }
+      }
+
+      let count = 0;
+      const flashInterval = setInterval(() => {
+        lights.forEach((l, i) => {
+          l.classList.remove("active");
+          if (i === count % prizes.length) {
+            l.classList.add("active");
+          }
+        });
+        count++;
+        if (count > prizes.length * 4 && count % prizes.length === selectedIndex) {
+          clearInterval(flashInterval);
+          winSound.play();
+          cheerSound.play();
+          result.textContent = `恭喜中獎：${prizes[selectedIndex].name}！`;
+          prizeImg.src = prizes[selectedIndex].img;
+          prizeImg.style.display = 'block';
+        }
+      }, 150);
+    });
+  </script>
+</body>
+</html>
